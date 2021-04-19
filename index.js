@@ -148,10 +148,10 @@ const targetAddress =
   node.handle(formatProtocol("hivePeers"), handler);
 
   console.log("Current identity:", node.peerId.toB58String());
+  console.log("Overlay:", getOverlay());
 
   const protocol = formatProtocol("handshake");
-  const connection = await node.dialProtocol(targetAddress, protocol);
-  const { stream } = connection;
+  const { stream } = await node.dialProtocol(targetAddress, protocol);
 
   const writer = await writeStream(stream);
   const reader = await readStream(stream);
@@ -165,11 +165,5 @@ const targetAddress =
 
   const ack = await createAck(listenAddress, peerId);
   writer.write(ack);
-
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  // The read stream should already be closed by the peer
-  stream.closeWrite();
-
-  console.log(stream.timeline);
+  writer.end();
 })();
