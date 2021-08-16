@@ -9,23 +9,24 @@ package handshake;
 option go_package = "pb";
 
 message Syn {
-    bytes ObservedUnderlay = 1;
+  bytes ObservedUnderlay = 1;
 }
 
 message Ack {
-    BzzAddress Address = 1;
-    uint64 NetworkID = 2;
-    bool Light = 3;
-    string WelcomeMessage  = 99;
+  BzzAddress Address = 1;
+  uint64 NetworkID = 2;
+  bool FullNode = 3;
+  bytes Transaction = 4;
+  string WelcomeMessage  = 99;
 }
 
 message SynAck {
-    Syn Syn = 1;
-    Ack Ack = 2;
+  Syn Syn = 1;
+  Ack Ack = 2;
 }
 
 message BzzAddress {
-    bytes Underlay = 1;
-    bytes Signature = 2;
-    bytes Overlay = 3;
+  bytes Underlay = 1;
+  bytes Signature = 2;
+  bytes Overlay = 3;
 }
