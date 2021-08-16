@@ -27,7 +27,7 @@ const generateSignData = (underlay, overlay) => {
 // TODO: Make this configurable
 const config = {
 	networkId: 10n,
-	light: false,
+	light: true,
 	welcomeMessage: 'This is a test',
 	transaction:
 		'0xaa918381eeb662d6a2735de929d6fd7d96db3f97a377d2e63c45509ae099f999',

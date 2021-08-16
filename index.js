@@ -19,9 +19,30 @@ const protocols = {
 	const wallet = new Wallet(node.peerId.privKey.marshal(), provider)
 
 	// Setup protocols
-	await protocols.pricing.create(node)
-	await protocols.hivePeers.create(node)
 	const handshake = await protocols.handshake.create(node, wallet)
+
+	const seen = new Set()
+	const onNewPeers = async (peers) => {
+		for (const peer of peers) {
+			if (seen.has(peer)) {
+				continue
+			}
+
+			console.log(`Handshaking with ${peer.underlay}`)
+			seen.add(peer)
+			handshake.execute(peer.underlay).catch(console.error)
+		}
+	}
+
+	setInterval(() => {
+		require('fs').writeFileSync(
+			'peers.json',
+			JSON.stringify([...seen], null, '\t')
+		)
+	}, 30000)
+
+	await protocols.pricing.create(node)
+	await protocols.hivePeers.create(node, onNewPeers)
 
 	console.log('Current identity:', node.peerId.toB58String())
 

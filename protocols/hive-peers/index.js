@@ -1,3 +1,5 @@
+const { multiaddr } = require('multiaddr')
+
 // Lib
 const { formatProtocol, newStream } = require('../../lib/protocols')
 
@@ -12,7 +14,7 @@ const protocol = formatProtocol({
 	stream: 'peers',
 })
 
-const create = async (node) => {
+const create = async (node, onNewPeers) => {
 	node.handle(protocol, async ({ stream }) => {
 		const { reader, writer } = await newStream(stream)
 		const { value, done } = await reader.next()
@@ -28,6 +30,15 @@ const create = async (node) => {
 		try {
 			const { peers } = Peers.decode(value)
 			console.log(`Got peers:`, peers)
+
+			onNewPeers(
+				peers.map((peer) => ({
+					underlay: multiaddr(peer.Underlay),
+					overlay: peer.Overlay.toString('hex'),
+					signature: peer.Signature.toString('hex'),
+					transaction: peer.Transaction.toString('hex'),
+				}))
+			)
 
 			// Close both sides
 			writer.end()
