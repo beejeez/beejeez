@@ -1,4 +1,4 @@
-const { getDefaultProvider } = require("ethers");
+const { getDefaultProvider, Wallet } = require("ethers");
 
 // Lib
 const { createNode } = require("./lib/libp2p");
@@ -11,13 +11,17 @@ const protocols = {
 };
 
 (async () => {
-  const provider = getDefaultProvider("http://srv02.apyos.com:8545");
+  // Create libp2p node
   const node = await createNode();
+
+  // Create ethers wallet
+  const provider = getDefaultProvider("http://srv02.apyos.com:8545");
+  const wallet = new Wallet(node.peerId.privKey.marshal(), provider);
 
   // Setup protocols
   await protocols.pricing.create(node);
   await protocols.hivePeers.create(node);
-  const handshake = await protocols.handshake.create(node, provider);
+  const handshake = await protocols.handshake.create(node, wallet);
 
   console.log("Current identity:", node.peerId.toB58String());
 

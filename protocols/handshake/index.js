@@ -1,5 +1,3 @@
-const { Bee } = require("@ethersphere/bee-js");
-
 // Lib
 const { formatProtocol } = require("../../lib/protocols");
 const { bufferToHex, hexToBuffer } = require("../../lib/buffers");
@@ -26,9 +24,6 @@ const generateSignData = (underlay, overlay) => {
   ]);
 };
 
-// TODO: Get rid of this lib
-const bee = new Bee("http://test");
-
 // TODO: Make this configurable
 const config = {
   networkId: 10n,
@@ -38,12 +33,14 @@ const config = {
     "0xaa918381eeb662d6a2735de929d6fd7d96db3f97a377d2e63c45509ae099f999",
 };
 
-const create = async (node, provider) => {
+const create = async (node, wallet) => {
   // NOTE: Can we not use multiple addresses here?
   const listenAddress = node.addresses.listen[0];
+  const { provider } = wallet;
 
-  // TODO: Replace with provider?
-  const key = bee.resolveSigner(node.peerId.privKey.marshal());
+  const sign = async (data) => {
+    return Buffer.from((await wallet.signMessage(data)).slice(2), "hex");
+  };
 
   const getNextBlockHash = async (transaction) => {
     const stringTx = bufferToHex(transaction);
@@ -63,9 +60,10 @@ const create = async (node, provider) => {
 
   const createAck = async (listenAddress) => {
     const { nextBlockHash } = await getNextBlockHash(config.transaction);
-    const overlay = await getOverlay(key.address, nextBlockHash);
+    const address = hexToBuffer(wallet.address);
+    const overlay = await getOverlay(address, nextBlockHash);
     const data = generateSignData(listenAddress.bytes, overlay);
-    const signature = await key.sign(data);
+    const signature = await sign(data);
 
     const address = BzzAddress.create({
       Underlay: listenAddress.bytes,

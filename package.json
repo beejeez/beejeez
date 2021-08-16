@@ -14,7 +14,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ethersphere/bee-js": "^1.1.1",
     "elliptic": "^6.5.4",
     "ethers": "^5.4.4",
     "it-length-prefixed": "^5.0.3",
