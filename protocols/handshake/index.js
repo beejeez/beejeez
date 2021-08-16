@@ -60,8 +60,10 @@ const create = async (node, wallet) => {
 
   const createAck = async (listenAddress) => {
     const { nextBlockHash } = await getNextBlockHash(config.transaction);
-    const address = hexToBuffer(wallet.address);
-    const overlay = await getOverlay(address, nextBlockHash);
+    const overlay = await getOverlay(
+      hexToBuffer(wallet.address),
+      nextBlockHash
+    );
     const data = generateSignData(listenAddress.bytes, overlay);
     const signature = await sign(data);
 
