@@ -27,7 +27,7 @@ const create = async (node) => {
 
 		try {
 			const { PaymentThreshold } = AnnouncePaymentThreshold.decode(value)
-			console.log(`Got payment threshold:`, PaymentThreshold)
+			//console.log(`Got payment threshold:`, PaymentThreshold)
 
 			// Close both sides
 			writer.end()

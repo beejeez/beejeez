@@ -1,0 +1,20 @@
+{
+	"name": "@beejeez/beejeez-apps-crawler",
+	"version": "0.0.0",
+	"main": "index.js",
+	"description": "Swarm node crawler",
+	"author": "Philippe Schommers <philippe@schommers.be>",
+	"license": "MIT",
+	"keywords": [
+		"swarm",
+		"bee",
+		"protocols",
+		"libp2p",
+		"ethereum",
+		"crawler",
+		"stats"
+	],
+	"dependencies": {
+		"p-queue": "^7.1.0"
+	}
+}

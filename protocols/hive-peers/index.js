@@ -29,8 +29,6 @@ const create = async (node, onNewPeers) => {
 
 		try {
 			const { peers } = Peers.decode(value)
-			console.log(`Got peers:`, peers)
-
 			onNewPeers(
 				peers.map((peer) => ({
 					underlay: multiaddr(peer.Underlay),
