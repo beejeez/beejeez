@@ -3,6 +3,7 @@ const { formatProtocol } = require('../../lib/protocols')
 const { bufferToHex, hexToBuffer } = require('../../lib/buffers')
 const { getOverlay, getNetworkIdBufferBE } = require('../../lib/swarm')
 const { readStream, writeStream } = require('../../lib/streams')
+const { getBuggyHash } = require('../../lib/go')
 
 // Proto
 const { handshake } = require('./proto')
@@ -26,11 +27,12 @@ const generateSignData = (underlay, overlay) => {
 
 // TODO: Make this configurable
 const config = {
-	networkId: 10n,
+	networkId: 1n,
 	light: true,
-	welcomeMessage: 'This is a test',
+	welcomeMessage: 'Beejeez - Staying Bzzing :bee:',
 	transaction:
-		'0xaa918381eeb662d6a2735de929d6fd7d96db3f97a377d2e63c45509ae099f999',
+		//'0xdbf4dc6e0a3a6a733ebcc152f5296aedc174964fbf433bf2154bcd31cdf0a9fa', // goerli
+		'0xb4479887140ddeb2f8adde886e269826857f581548643d95e64358f5acdca057', // xdai
 }
 
 const create = async (node, wallet) => {
@@ -47,7 +49,12 @@ const create = async (node, wallet) => {
 		const { from, blockNumber, blockHash } = await provider.getTransaction(
 			stringTx
 		)
-		const { hash, parentHash } = await provider.getBlock(blockNumber + 1)
+
+		// This is a bit hacky for now because of an issue with bee 1.0.0 - 1.2.0
+		// const { hash, parentHash } = await provider.getBlock(blockNumber + 1)
+		const hash = await getBuggyHash(blockNumber + 1)
+		const parentHash = blockHash
+
 		return { from, blockHash, nextBlockHash: hash, parentHash }
 	}
 
@@ -60,7 +67,7 @@ const create = async (node, wallet) => {
 
 	const createAck = async (listenAddress) => {
 		const { nextBlockHash } = await getNextBlockHash(config.transaction)
-		const overlay = await getOverlay(hexToBuffer(wallet.address), nextBlockHash)
+		const overlay = await getOverlay(wallet.address, nextBlockHash)
 		const data = generateSignData(listenAddress.bytes, overlay)
 		const signature = await sign(data)
 
@@ -90,16 +97,21 @@ const create = async (node, wallet) => {
 			throw new Error('Invalid block hash')
 		}
 
-		const expected = await getOverlay(hexToBuffer(from), nextBlockHash)
+		const expected = await getOverlay(from, nextBlockHash)
 		if (Buffer.compare(expected, overlay)) {
-			console.log({ expected, overlay })
 			throw new Error("Overlay doesn't match")
 		}
 	}
 
 	const execute = async (targetAddress) => {
-		const { stream } = await node.dialProtocol(targetAddress, protocol)
+		let dial
+		try {
+			dial = await node.dialProtocol(targetAddress, protocol)
+		} catch (err) {
+			throw { code: 'DIAL', err }
+		}
 
+		const { stream } = dial
 		const writer = await writeStream(stream)
 		const reader = await readStream(stream)
 
@@ -108,9 +120,12 @@ const create = async (node, wallet) => {
 		const { value: rawSynAck } = await reader.next()
 		const synAck = SynAck.decode(rawSynAck)
 
-		console.log(synAck)
-
-		await verifyOverlay(synAck.Ack.Transaction, synAck.Ack.Address.Overlay)
+		try {
+			await verifyOverlay(synAck.Ack.Transaction, synAck.Ack.Address.Overlay)
+		} catch (err) {
+			stream.abort()
+			throw { code: 'OVERLAY_MISMATCH', err }
+		}
 
 		const ack = await createAck(listenAddress)
 		writer.write(ack)

@@ -9,8 +9,9 @@
 		"proto:pricing": "pbjs -t static-module -w commonjs -o protocols/pricing/proto.js protocols/pricing/pricing.proto",
 		"proto:hive-peers": "pbjs -t static-module -w commonjs -o protocols/hive-peers/proto.js protocols/hive-peers/hive-peers.proto",
 		"proto:handshake": "pbjs -t static-module -w commonjs -o protocols/handshake/proto.js protocols/handshake/handshake.proto",
+		"proto:identify": "pbjs -t static-module -w commonjs -o protocols/identify/proto.js protocols/identify/identify.proto",
 		"proto:headers": "pbjs -t static-module -w commonjs -o lib/headers/proto.js lib/headers/headers.proto",
-		"proto": "run-p proto:pricing proto:headers proto:hive-peers proto:handshake"
+		"proto": "run-p proto:pricing proto:headers proto:hive-peers proto:handshake proto:identify"
 	},
 	"keywords": [
 		"swarm",

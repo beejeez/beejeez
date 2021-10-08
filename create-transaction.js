@@ -7,8 +7,10 @@ const { getDefaultProvider, Wallet } = require('ethers')
 		JSON.parse(await readFile('peer-id.json'))
 	)
 
-	const provider = getDefaultProvider('http://srv02.apyos.com:8545')
+	const provider = getDefaultProvider('https://rpc.xdaichain.com/')
 	const wallet = new Wallet(peerId.privKey.marshal(), provider)
+
+	console.log(`Sending transaction from account ${wallet.address}`)
 
 	const tx = await wallet.sendTransaction({
 		to: wallet.address,

@@ -8,6 +8,7 @@ const protocols = {
 	pricing: require('./protocols/pricing'),
 	hivePeers: require('./protocols/hive-peers'),
 	handshake: require('./protocols/handshake'),
+	identify: require('./protocols/identify'),
 }
 
 ;(async () => {
@@ -15,31 +16,13 @@ const protocols = {
 	const node = await createNode()
 
 	// Create ethers wallet
-	const provider = getDefaultProvider('http://srv02.apyos.com:8545')
+	const provider = getDefaultProvider('https://rpc.xdaichain.com/')
 	const wallet = new Wallet(node.peerId.privKey.marshal(), provider)
 
 	// Setup protocols
 	const handshake = await protocols.handshake.create(node, wallet)
 
-	const seen = new Set()
-	const onNewPeers = async (peers) => {
-		for (const peer of peers) {
-			if (seen.has(peer)) {
-				continue
-			}
-
-			console.log(`Handshaking with ${peer.underlay}`)
-			seen.add(peer)
-			handshake.execute(peer.underlay).catch(console.error)
-		}
-	}
-
-	setInterval(() => {
-		require('fs').writeFileSync(
-			'peers.json',
-			JSON.stringify([...seen], null, '\t')
-		)
-	}, 30000)
+	const onNewPeers = async () => {}
 
 	await protocols.pricing.create(node)
 	await protocols.hivePeers.create(node, onNewPeers)
