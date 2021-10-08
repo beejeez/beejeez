@@ -91,7 +91,10 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 		}
 
 		try {
-			update({ userAgent: await getUserAgent(underlay) })
+			update({
+				userAgent: await getUserAgent(underlay),
+				error: undefined,
+			})
 		} catch (err) {
 			// Ignore
 		}
