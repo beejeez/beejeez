@@ -47,7 +47,7 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 	// Create queue
 	const { default: PQueue } = await import('p-queue')
-	const queue = new PQueue({ concurrency: 100, autoStart: false })
+	const queue = new PQueue({ concurrency: 500, autoStart: false })
 	const queued = new Map()
 	const nodes = await loadNodes()
 
