@@ -17,9 +17,13 @@ const NODES_PATH = path.join(__dirname, 'data/nodes.json')
 	for (const node of nodes.values()) {
 		if (node.error) {
 			errors[node.error] = (errors[node.error] || 0) + 1
-		} else if (node.userAgent) {
+		}
+
+		if (node.userAgent) {
 			userAgents[node.userAgent] = (userAgents[node.userAgent] || 0) + 1
-		} else {
+		}
+
+		if (!node.error && !node.userAgent) {
 			pending++
 		}
 	}

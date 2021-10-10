@@ -1,6 +1,7 @@
 const { readFile, writeFile } = require('fs/promises')
 const { getDefaultProvider, Wallet } = require('ethers')
 const path = require('path')
+const pDefer = require('p-defer')
 
 // Lib
 const { createNode } = require('../../lib/libp2p')
@@ -28,6 +29,10 @@ const loadNodes = async () => {
 const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 ;(async () => {
+	// Graceful shutdown
+	let shutdown = false
+	const shutdownPromise = pDefer()
+
 	// Create libp2p node
 	const node = await createNode()
 	console.log('Current identity:', node.peerId.toB58String())
@@ -42,7 +47,7 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 	// Create queue
 	const { default: PQueue } = await import('p-queue')
-	const queue = new PQueue({ concurrency: 25, autoStart: false })
+	const queue = new PQueue({ concurrency: 100, autoStart: false })
 	const queued = new Map()
 	const nodes = await loadNodes()
 
@@ -79,14 +84,22 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 			addToQueue(key)
 		}
 
-		await sleep(getNextTimestamp(key) - Date.now())
+		try {
+			await Promise.race([
+				sleep(getNextTimestamp(key) - Date.now()),
+				shutdownPromise.promise,
+			])
+		} catch (_) {
+			// NOTE: Only happens when the shutdown promise rejects
+			return
+		}
 
 		console.log(`Handshaking with ${underlay}`)
 
 		try {
 			await handshake.execute(underlay)
-		} catch (err) {
-			update({ error: err.code })
+		} catch ({ code, err }) {
+			update({ error: err?.code ? `${code}_${err.code}` : code })
 			return
 		}
 
@@ -96,7 +109,7 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 				error: undefined,
 			})
 		} catch (err) {
-			// Ignore
+			update({ error: undefined })
 		}
 	}
 
@@ -113,7 +126,7 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 	// Seed crawler
 	addToQueue(
-		'/ip4/68.202.26.117/tcp/11649/p2p/16Uiu2HAmGcVwgGNEP5hAicfHXLujwj6EovbAFqZaREqMZKfwas1L'
+		'/ip4/3.122.235.6/tcp/31101/p2p/16Uiu2HAm2JDZfnHHi8aRQCGDWnQxyE2vKTMTFnyGvkLQwnb39Q9x'
 	)
 
 	// Add all previously crawled nodes in order of least recently crawled
@@ -124,9 +137,47 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 	console.log(`Nodes added to queue: ${queue.size}`)
 	queue.start()
 
-	// Write nodes to file roughly every second
-	while (true) {
-		await writeFile(NODES_PATH, JSON.stringify([...nodes], null, '\t'))
-		await sleep(1000)
+	// Graceful shutdown
+	const onQueueDone = async () => {
+		if (!queue.pending) {
+			return
+		}
+
+		return new Promise((resolve) => {
+			queue.on('next', () => {
+				if (!queue.pending) {
+					resolve()
+				}
+			})
+		})
 	}
+
+	const gracefulShutdown = async () => {
+		queue.pause()
+		shutdownPromise.reject()
+		await onQueueDone()
+		shutdown = true
+	}
+
+	process.on('SIGINT', gracefulShutdown)
+	process.on('SIGTERM', gracefulShutdown)
+
+	const save = async () => {
+		return writeFile(NODES_PATH, JSON.stringify([...nodes], null, '\t'))
+	}
+
+	// Write nodes to file roughly every 5 seconds
+	while (!shutdown) {
+		await save()
+
+		try {
+			await Promise.race([sleep(5000), shutdownPromise.promise])
+		} catch (_) {
+			break
+		}
+	}
+
+	// Save data one last time
+	await save()
+	process.exit(0)
 })()
