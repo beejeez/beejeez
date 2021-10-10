@@ -6,13 +6,20 @@ const NODES_PATH = path.join(__dirname, 'data/nodes.json')
 
 // Script
 ;(async () => {
-	const data = await readFile(NODES_PATH)
-	const nodes = new Map(JSON.parse(data))
+	let nodes
+	do {
+		try {
+			const data = await readFile(NODES_PATH)
+			nodes = new Map(JSON.parse(data))
+		} catch (_) {
+			// Ignore
+		}
+	} while (!nodes)
 
 	// Gather some stats
 	const errors = {}
 	const userAgents = {}
-	let pending = 0
+	const stats = { pending: 0, userAgents: 0 }
 
 	for (const node of nodes.values()) {
 		if (node.error) {
@@ -21,16 +28,18 @@ const NODES_PATH = path.join(__dirname, 'data/nodes.json')
 
 		if (node.userAgent) {
 			userAgents[node.userAgent] = (userAgents[node.userAgent] || 0) + 1
+			stats.userAgents++
 		}
 
 		if (!node.error && !node.userAgent) {
-			pending++
+			stats.pending++
 		}
 	}
 
 	console.log('Stats:')
 	console.log(`- ${[...nodes].length} nodes`)
-	console.log(`- ${pending} pending`)
+	console.log(`- ${stats.pending} pending`)
+	console.log(`- ${stats.userAgents} user agents found`)
 	console.log()
 
 	console.log('Errors:')
