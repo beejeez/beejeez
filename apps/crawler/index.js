@@ -162,13 +162,17 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 	process.on('SIGINT', gracefulShutdown)
 	process.on('SIGTERM', gracefulShutdown)
 
-	const save = async () => {
-		return writeFile(NODES_PATH, JSON.stringify([...nodes], null, '\t'))
+	const trySave = async () => {
+		try {
+			await writeFile(NODES_PATH, JSON.stringify([...nodes]))
+		} catch (err) {
+			console.error(err)
+		}
 	}
 
 	// Write nodes to file roughly every 5 seconds
 	while (!shutdown) {
-		await save()
+		await trySave()
 
 		try {
 			await Promise.race([sleep(5000), shutdownPromise.promise])
@@ -178,6 +182,6 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 	}
 
 	// Save data one last time
-	await save()
+	await trySave()
 	process.exit(0)
 })()
