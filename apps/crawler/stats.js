@@ -1,5 +1,5 @@
 const path = require('path')
-const { readFile } = require('fs/promises')
+const { readFile, stat } = require('fs/promises')
 
 // Config
 const NODES_PATH = path.join(__dirname, 'data/nodes.json')
@@ -11,6 +11,10 @@ const sortCount = (object) => {
 
 // Script
 ;(async () => {
+	const start = Date.now()
+	const { atime } = await stat(NODES_PATH)
+	console.log(`Last update: ${(Date.now() - atime) / 1000}s ago`)
+
 	let nodes
 	do {
 		try {
@@ -20,6 +24,9 @@ const sortCount = (object) => {
 			// Ignore
 		}
 	} while (!nodes)
+
+	console.log(`Processing time: ${(Date.now() - start) / 1000}s`)
+	console.log()
 
 	// Gather some stats
 	const errors = {}
