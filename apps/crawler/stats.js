@@ -4,6 +4,11 @@ const { readFile } = require('fs/promises')
 // Config
 const NODES_PATH = path.join(__dirname, 'data/nodes.json')
 
+// Functions
+const sortCount = (object) => {
+	return Object.entries(object).sort((a, b) => b[1] - a[1])
+}
+
 // Script
 ;(async () => {
 	let nodes
@@ -43,13 +48,13 @@ const NODES_PATH = path.join(__dirname, 'data/nodes.json')
 	console.log()
 
 	console.log('Errors:')
-	for (const [error, count] of Object.entries(errors)) {
+	for (const [error, count] of sortCount(errors)) {
 		console.log(`- ${error}: ${count}`)
 	}
 	console.log()
 
 	console.log('User agents:')
-	for (const [userAgent, count] of Object.entries(userAgents)) {
+	for (const [userAgent, count] of sortCount(userAgents)) {
 		console.log(`- ${userAgent}: ${count}`)
 	}
 	console.log()
