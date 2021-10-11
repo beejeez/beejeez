@@ -2,8 +2,10 @@ const { readFile, writeFile } = require('fs/promises')
 const { getDefaultProvider, Wallet } = require('ethers')
 const path = require('path')
 const pDefer = require('p-defer')
+const { multiaddr } = require('multiaddr')
 
 // Lib
+const { recursiveResolve } = require('./lib/multiaddr')
 const { createNode } = require('../../lib/libp2p')
 
 // Config
@@ -124,10 +126,10 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 	await protocols.hivePeers.create(node, onNewPeers)
 	await protocols.pricing.create(node)
 
-	// Seed crawler
-	addToQueue(
-		'/ip4/3.122.235.6/tcp/31101/p2p/16Uiu2HAm2JDZfnHHi8aRQCGDWnQxyE2vKTMTFnyGvkLQwnb39Q9x'
-	)
+	// Seed crawler with boot nodes
+	const mainnet = multiaddr('/dnsaddr/mainnet.ethswarm.org')
+	const bootnodes = await recursiveResolve(mainnet)
+	bootnodes.map((ma) => addToQueue(ma.toString()))
 
 	// Add all previously crawled nodes in order of least recently crawled
 	for (const underlay of nodes.keys()) {

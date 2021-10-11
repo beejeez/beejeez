@@ -1,5 +1,9 @@
 const path = require('path')
 const { readFile, stat } = require('fs/promises')
+const { multiaddr } = require('multiaddr')
+
+// Lib
+const { recursiveResolve } = require('./lib/multiaddr')
 
 // Config
 const NODES_PATH = path.join(__dirname, 'data/nodes.json')
@@ -28,10 +32,16 @@ const sortCount = (object) => {
 	console.log(`Processing time: ${(Date.now() - start) / 1000}s`)
 	console.log()
 
+	// Bootnodes
+	const mainnet = multiaddr('/dnsaddr/mainnet.ethswarm.org')
+	const bootnodeMas = await recursiveResolve(mainnet)
+	const bootnodes = new Set(bootnodeMas.map((ma) => ma.toString()))
+
 	// Gather some stats
 	const errors = {}
 	const userAgents = {}
 	const stats = { pending: 0, userAgents: 0 }
+	const bnUas = {}
 
 	for (const node of nodes.values()) {
 		if (node.error) {
@@ -45,6 +55,12 @@ const sortCount = (object) => {
 
 		if (!node.error && !node.userAgent) {
 			stats.pending++
+		}
+
+		if (bootnodes.has(node.underlay)) {
+			if (node.userAgent) {
+				bnUas[node.userAgent] = (bnUas[node.userAgent] || 0) + 1
+			}
 		}
 	}
 
@@ -62,6 +78,12 @@ const sortCount = (object) => {
 
 	console.log('User agents:')
 	for (const [userAgent, count] of sortCount(userAgents)) {
+		console.log(`- ${userAgent}: ${count}`)
+	}
+	console.log()
+
+	console.log('Boot node user agents:')
+	for (const [userAgent, count] of sortCount(bnUas)) {
 		console.log(`- ${userAgent}: ${count}`)
 	}
 	console.log()
