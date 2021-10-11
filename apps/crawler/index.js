@@ -6,6 +6,7 @@ const { multiaddr } = require('multiaddr')
 
 // Lib
 const { recursiveResolve } = require('./lib/multiaddr')
+const { isIterable } = require('./lib/tools')
 const { createNode } = require('../../lib/libp2p')
 
 // Config
@@ -101,6 +102,10 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 		try {
 			await handshake.execute(underlay)
 		} catch ({ code, err }) {
+			if (err.name === 'AggregateError') {
+				const errors = isIterable(err) ? [...err] : err.errors
+				err.code = errors[0].code
+			}
 			update({ error: err?.code ? `${code}_${err.code}` : code })
 			return
 		}
