@@ -102,7 +102,7 @@ const sleep = async (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 		try {
 			await handshake.execute(underlay)
 		} catch ({ code, err }) {
-			if (err.name === 'AggregateError') {
+			if (err?.name === 'AggregateError') {
 				const errors = isIterable(err) ? [...err] : err.errors
 				err.code = errors[0].code
 			}
